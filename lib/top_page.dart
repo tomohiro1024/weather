@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:weather2/weather.dart';
+import 'package:weather2/zip_code.dart';
 
 class TopPage extends StatefulWidget {
   const TopPage({Key? key}) : super(key: key);
@@ -13,6 +14,8 @@ class _TopPageState extends State<TopPage> {
   // 現在の天気
   Weather currentWeather =
       Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 12), 10);
+
+  List<String> address = ['-', '-'];
 
   List<Weather> hourlyWeather = [
     Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 10), 10),
@@ -56,15 +59,29 @@ class _TopPageState extends State<TopPage> {
             Container(
                 width: 250,
                 child: TextField(
-                  onSubmitted: (value) {
-                    print(value);
+                  onSubmitted: (value) async {
+                    // 郵便番号から住所を検索
+                    address = (await ZipCode.searchAddressFromZipCode(value))!;
+                    print(address);
+                    // addressの値が'ー'からvalueに入ってきた値になるため更新が必要
+                    // setStateはビルドがもう一度実行される
+                    setState(() {});
                   },
                   decoration: InputDecoration(hintText: '郵便番号を入力して下さい'),
                 )),
-            SizedBox(height: 50),
-            Text(
-              'さいたま市',
-              style: TextStyle(fontSize: 25),
+            SizedBox(height: 25),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  address[0],
+                  style: TextStyle(fontSize: 23),
+                ),
+                Text(
+                  address[1],
+                  style: TextStyle(fontSize: 23),
+                ),
+              ],
             ),
             Text(currentWeather.description),
             Text(
@@ -81,7 +98,7 @@ class _TopPageState extends State<TopPage> {
                 Text('最低:${currentWeather.tempMin}°'),
               ],
             ),
-            SizedBox(height: 50),
+            SizedBox(height: 25),
             Divider(height: 0),
             SingleChildScrollView(
               // 横にリストをスワイプさせる
