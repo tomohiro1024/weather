@@ -15,7 +15,9 @@ class _TopPageState extends State<TopPage> {
   Weather currentWeather =
       Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 12), 10);
 
-  List<String> address = ['-', '-'];
+  String? address = 'ー';
+
+  String? errorMessage;
 
   List<Weather> hourlyWeather = [
     Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 10), 10),
@@ -60,28 +62,32 @@ class _TopPageState extends State<TopPage> {
                 width: 250,
                 child: TextField(
                   onSubmitted: (value) async {
+                    Map<String, String> response = {};
                     // 郵便番号から住所を検索
-                    address = (await ZipCode.searchAddressFromZipCode(value))!;
-                    print(address);
+                    response = (await ZipCode.searchAddressFromZipCode(value))!;
+                    await Weather.getCurrentWeather(value);
+                    // responseの'message'というキーに値が入ってきた(エラーが出た)場合に入ってくる変数
+                    errorMessage = response['message'];
+                    // responseの'address'というキーが含んでいた場合、変数addressに'address'の値を入れる
+                    if (response.containsKey('address')) {
+                      address = response['address'];
+                    }
                     // addressの値が'ー'からvalueに入ってきた値になるため更新が必要
                     // setStateはビルドがもう一度実行される
                     setState(() {});
                   },
                   decoration: InputDecoration(hintText: '郵便番号を入力して下さい'),
                 )),
+            // errorMessageに値が入っていない(エラーじゃない)場合何も表示しない
+            // errorMessageに値が入ってきた(エラー)場合、エラーメッセージを表示する
+            Text(
+              errorMessage == null ? '' : errorMessage!,
+              style: TextStyle(color: Colors.red),
+            ),
             SizedBox(height: 25),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  address[0],
-                  style: TextStyle(fontSize: 23),
-                ),
-                Text(
-                  address[1],
-                  style: TextStyle(fontSize: 23),
-                ),
-              ],
+            Text(
+              address!,
+              style: TextStyle(fontSize: 23),
             ),
             Text(currentWeather.description),
             Text(
