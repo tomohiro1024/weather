@@ -28,6 +28,7 @@ class _TopPageState extends State<TopPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.cyanAccent,
       body: SafeArea(
         child: Column(
           children: [
@@ -151,11 +152,11 @@ class _TopPageState extends State<TopPage> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          '${weather.tempMax}',
+                                          '${weather.tempMax}°',
                                           style: TextStyle(fontSize: 15),
                                         ),
                                         Text(
-                                          '${weather.tempMin}',
+                                          '${weather.tempMin}°',
                                           style: TextStyle(
                                             fontSize: 15,
                                             color:
