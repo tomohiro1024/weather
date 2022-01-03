@@ -12,43 +12,16 @@ class TopPage extends StatefulWidget {
 
 class _TopPageState extends State<TopPage> {
   // 現在の天気
-  Weather currentWeather =
-      Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 12), 10);
+  Weather? currentWeather;
 
   String? address = 'ー';
 
   String? errorMessage;
 
-  List<Weather> hourlyWeather = [
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 10), 10),
-    Weather(16, 20, 10, '曇り', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 11), 20),
-    Weather(17, 20, 10, '雨', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 12), 30),
-    Weather(18, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 13), 40),
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 10), 10),
-    Weather(16, 20, 10, '曇り', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 11), 20),
-    Weather(17, 20, 10, '雨', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 12), 30),
-    Weather(18, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 13), 40),
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 10), 10),
-    Weather(16, 20, 10, '曇り', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 11), 20),
-    Weather(17, 20, 10, '雨', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 12), 30),
-    Weather(18, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2020, 10, 2, 13), 40),
-  ];
+  List<Weather>? hourlyWeather;
 
   // 日毎の天気を表示させるためのリスト
-  List<Weather> dailyWeather = [
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 1), 10),
-    Weather(15, 21, 11, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 2), 10),
-    Weather(15, 22, 12, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 3), 10),
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 1), 10),
-    Weather(15, 21, 11, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 2), 10),
-    Weather(15, 22, 12, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 3), 10),
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 1), 10),
-    Weather(15, 21, 11, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 2), 10),
-    Weather(15, 22, 12, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 3), 10),
-    Weather(15, 20, 10, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 1), 10),
-    Weather(15, 21, 11, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 2), 10),
-    Weather(15, 22, 12, '晴れ', 1.0, 1.0, '晴れ', DateTime(2021, 10, 3), 10),
-  ];
+  List<Weather>? dailyWeather;
 
   List<String> weekDay = ['月', '火', '水', '木', '金', '土', '日'];
 
@@ -65,13 +38,19 @@ class _TopPageState extends State<TopPage> {
                     Map<String, String> response = {};
                     // 郵便番号から住所を検索
                     response = (await ZipCode.searchAddressFromZipCode(value))!;
-                    await Weather.getCurrentWeather(value);
                     // responseの'message'というキーに値が入ってきた(エラーが出た)場合に入ってくる変数
                     errorMessage = response['message'];
                     // responseの'address'というキーが含んでいた場合、変数addressに'address'の値を入れる
                     if (response.containsKey('address')) {
                       address = response['address'];
+                      currentWeather = await Weather.getCurrentWeather(value);
+                      Map<String, List<Weather>>? weatherForcast =
+                          await Weather.getForecast(
+                              currentWeather!.lon, currentWeather!.lat);
+                      hourlyWeather = weatherForcast!['hourly'];
+                      dailyWeather = weatherForcast!['daily'];
                     }
+
                     // addressの値が'ー'からvalueに入ってきた値になるため更新が必要
                     // setStateはビルドがもう一度実行される
                     setState(() {});
@@ -84,107 +63,116 @@ class _TopPageState extends State<TopPage> {
               errorMessage == null ? '' : errorMessage!,
               style: TextStyle(color: Colors.red),
             ),
-            SizedBox(height: 25),
+            SizedBox(height: 20),
             Text(
               address!,
               style: TextStyle(fontSize: 23),
             ),
-            Text(currentWeather.description),
+            Text(currentWeather == null ? 'ー' : currentWeather!.description),
             Text(
-              '${currentWeather.temp}°',
+              currentWeather == null ? 'ー' : '${currentWeather!.temp}°',
               style: TextStyle(fontSize: 50),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('最高:${currentWeather.tempMax}°'),
+                  padding: const EdgeInsets.all(5.0),
+                  child: Text(currentWeather == null
+                      ? '最高気温:ー'
+                      : '最高気温: ${currentWeather!.tempMax}°'),
                 ),
-                Text('最低:${currentWeather.tempMin}°'),
+                Text(currentWeather == null
+                    ? '最低気温:ー'
+                    : '最低気温: ${currentWeather!.tempMin}°'),
               ],
             ),
-            SizedBox(height: 25),
+            SizedBox(height: 20),
             Divider(height: 0),
             SingleChildScrollView(
               // 横にリストをスワイプさせる
               scrollDirection: Axis.horizontal,
-              child: Row(
-                children: hourlyWeather.map(
-                  (weather) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0, vertical: 8.0),
-                      child: Column(
-                        children: [
-                          Text('${DateFormat('H').format(weather.time)}時'),
-                          Text('${weather.rainyPercent}%',
-                              style: TextStyle(color: Colors.blueAccent)),
-                          Icon(Icons.wb_sunny),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text('${weather.temp}°',
-                                style: TextStyle(fontSize: 18)),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ).toList(),
-              ),
-            ),
-            Divider(height: 0),
-            Expanded(
-              // 縦にスクロールさせる
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Column(
-                    children: dailyWeather.map((weather) {
-                      return Container(
-                        height: 50,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                                width: 50,
-                                child: Text(
-                                    '${weekDay[weather.time.weekday - 1]}曜日')),
-                            Row(
+              child: hourlyWeather == null
+                  ? Container()
+                  : Row(
+                      children: hourlyWeather!.map(
+                        (weather) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 8.0),
+                            child: Column(
                               children: [
-                                Icon(Icons.wb_sunny),
-                                Text('${weather.rainyPercent}%',
-                                    style: TextStyle(color: Colors.blueAccent)),
+                                Text(
+                                    '${DateFormat('H').format(weather.time)}時'),
+                                Image.network(
+                                  'https://openweathermap.org/img/wn/${weather.icon}.png',
+                                  width: 29,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text('${weather.temp}°',
+                                      style: TextStyle(fontSize: 18)),
+                                ),
                               ],
                             ),
-                            Container(
-                              width: 50,
+                          );
+                        },
+                      ).toList(),
+                    ),
+            ),
+            Divider(height: 0),
+            dailyWeather == null
+                ? Container()
+                : Expanded(
+                    // 縦にスクロールさせる
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Column(
+                          children: dailyWeather!.map((weather) {
+                            return Container(
+                              height: 50,
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    '${weather.tempMax}',
-                                    style: TextStyle(fontSize: 15),
+                                  Container(
+                                      width: 50,
+                                      child: Text(
+                                          '${weekDay[weather.time.weekday - 1]}曜日')),
+                                  Image.network(
+                                    'https://openweathermap.org/img/wn/${weather.icon}.png',
+                                    width: 29,
                                   ),
-                                  Text(
-                                    '${weather.tempMin}',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: Colors.black.withOpacity(0.5),
+                                  Container(
+                                    width: 50,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${weather.tempMax}',
+                                          style: TextStyle(fontSize: 15),
+                                        ),
+                                        Text(
+                                          '${weather.tempMin}',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color:
+                                                Colors.black.withOpacity(0.5),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            )
+                      ),
+                    ),
+                  )
           ],
         ),
       ),
